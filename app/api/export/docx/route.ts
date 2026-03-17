@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { generateDocx } from "@/lib/docx";
 import type { ParsedSow } from "@/lib/types";
 
-function getConvex() {
-  return new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+async function getConvex() {
+  const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  const { getToken } = await auth();
+  const token = await getToken({ template: "convex" });
+  if (token) convex.setAuth(token);
+  return convex;
 }
 
 /**
@@ -31,15 +36,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the SOW from Convex
-    const convex = getConvex();
-    let sow: ParsedSow;
-    try {
-      sow = await convex.query(api.sows.get, {
-        id: sowId as Id<"sows">,
-      }) as ParsedSow;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "SOW not found";
-      return NextResponse.json({ error: message }, { status: 404 });
+    const convex = await getConvex();
+    const sow = await convex.query(api.sows.get, {
+      id: sowId as Id<"sows">,
+    }) as ParsedSow | null;
+
+    if (!sow) {
+      return NextResponse.json({ error: "SOW not found or unauthorized" }, { status: 404 });
     }
 
     // Generate the DOCX buffer

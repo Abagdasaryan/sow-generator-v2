@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { renderSowHtml } from "@/lib/sow-html";
 import type { ParsedSow } from "@/lib/types";
 
-function getConvex() {
-  return new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+async function getConvex() {
+  const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  const { getToken } = await auth();
+  const token = await getToken({ template: "convex" });
+  if (token) convex.setAuth(token);
+  return convex;
 }
 
 /**
@@ -19,6 +24,38 @@ function getConvex() {
  * Body: { sowId: string }
  * Response: text/html with Content-Disposition attachment header
  */
+/**
+ * GET /api/export/pdf?sowId=xxx&preview=true
+ * Returns rendered HTML for in-browser preview.
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const sowId = request.nextUrl.searchParams.get("sowId");
+    if (!sowId) {
+      return NextResponse.json({ error: "Missing sowId" }, { status: 400 });
+    }
+
+    const convex = await getConvex();
+    const sow = await convex.query(api.sows.get, {
+      id: sowId as Id<"sows">,
+    }) as ParsedSow;
+
+    if (!sow) {
+      return NextResponse.json({ error: "SOW not found" }, { status: 404 });
+    }
+
+    const html = renderSowHtml(sow);
+    return new NextResponse(html, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  } catch (err) {
+    console.error("[/api/export/pdf GET] Error:", err);
+    const message = err instanceof Error ? err.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -32,15 +69,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the SOW from Convex
-    const convex = getConvex();
-    let sow: ParsedSow;
-    try {
-      sow = await convex.query(api.sows.get, {
-        id: sowId as Id<"sows">,
-      }) as ParsedSow;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "SOW not found";
-      return NextResponse.json({ error: message }, { status: 404 });
+    const convex = await getConvex();
+    const sow = await convex.query(api.sows.get, {
+      id: sowId as Id<"sows">,
+    }) as ParsedSow | null;
+
+    if (!sow) {
+      return NextResponse.json({ error: "SOW not found or unauthorized" }, { status: 404 });
     }
 
     // Render to print-optimized HTML
