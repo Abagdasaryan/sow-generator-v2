@@ -83,7 +83,7 @@ export const list = query({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) return [];
 
     let sows;
     if (args.status) {
@@ -115,11 +115,10 @@ export const get = query({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) return null;
 
     const sow = await ctx.db.get(args.id);
-    if (!sow) throw new Error("SOW not found");
-    if (sow.userId !== userId) throw new Error("Unauthorized");
+    if (!sow || sow.userId !== userId) return null;
 
     return sow;
   },

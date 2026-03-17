@@ -6,7 +6,7 @@ export const listBySow = query({
   args: { sowId: v.id("sows") },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) return [];
 
     const versions = await ctx.db
       .query("sowVersions")
@@ -22,10 +22,10 @@ export const getVersion = query({
   args: { id: v.id("sowVersions") },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) return null;
 
     const version = await ctx.db.get(args.id);
-    if (!version) throw new Error("Version not found");
+    if (!version) return null;
 
     return {
       ...version,
