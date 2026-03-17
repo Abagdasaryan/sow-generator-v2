@@ -1,8 +1,7 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
+import { useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { api } from "@/convex/_generated/api";
@@ -12,7 +11,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 export default function DashboardPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
-  const { signOut } = useAuthActions();
+  const { signOut } = useClerk();
   const currentUser = useQuery(api.users.current);
   const sows = useQuery(api.sows.list, {});
   const templates = useQuery(api.templates.list);

@@ -9,7 +9,6 @@
  */
 
 import type * as approvals from "../approvals.js";
-import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
 import type * as http from "../http.js";
 import type * as sows from "../sows.js";
@@ -25,7 +24,6 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   approvals: typeof approvals;
-  auth: typeof auth;
   comments: typeof comments;
   http: typeof http;
   sows: typeof sows;
