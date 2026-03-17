@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "SOW Generator",
   description: "Generate professional Statements of Work for integration projects",
