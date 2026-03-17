@@ -5,7 +5,9 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { renderSowHtml } from "@/lib/sow-html";
 import type { ParsedSow } from "@/lib/types";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+function getConvex() {
+  return new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+}
 
 /**
  * POST /api/export/pdf
@@ -30,6 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the SOW from Convex
+    const convex = getConvex();
     let sow: ParsedSow;
     try {
       sow = await convex.query(api.sows.get, {

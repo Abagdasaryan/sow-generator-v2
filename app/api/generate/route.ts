@@ -14,8 +14,12 @@ import type {
   ParsedSow,
 } from "@/lib/types";
 
-const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY from env
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+function getConvex() {
+  return new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+}
+function getAnthropic() {
+  return new Anthropic();
+}
 
 const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 const SYSTEM_PROMPT =
@@ -38,6 +42,7 @@ async function callClaude(
   temperature: number = 0.3,
   maxTokens: number = 4096
 ): Promise<string> {
+  const anthropic = getAnthropic();
   const message = await anthropic.messages.create({
     model: CLAUDE_MODEL,
     system: SYSTEM_PROMPT,
@@ -124,6 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the SOW from Convex
+    const convex = getConvex();
     let sow: ParsedSow;
     try {
       sow = await convex.query(api.sows.get, {
